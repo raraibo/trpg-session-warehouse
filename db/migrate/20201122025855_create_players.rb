@@ -1,7 +1,7 @@
 class CreatePlayers < ActiveRecord::Migration[6.0]
   def change
     create_table :players do |t|
-      t.string :name, :null false
+      t.string :name, null: false
       t.string :twitter_id
       t.string :youtube_url
       t.string :note
