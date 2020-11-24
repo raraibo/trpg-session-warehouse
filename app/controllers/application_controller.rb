@@ -3,19 +3,26 @@ class ApplicationController < ActionController::Base
     render html: "hello, world!"
   end
 
-  def google_drive
-    credentials = Google::Auth::UserRefreshCredentials.new(
-      client_id: ENV['GOOGLE_CLIENT_ID'],
-      client_secret: ENV['GOOGLE_CLIENT_SECRET'],
-      scope: %w(https://www.googleapis.com/auth/drive https://spreadsheets.google.com/feeds/),
-      redirect_uri: 'http://example.com/redirect'
-    )
-    credentials.refresh_token = ENV['GOOGLE_REFRESH_TOKEN']
-    credentials.fetch_access_token!
-    session = GoogleDrive::Session.from_credentials(credentials)
+  def excel
+    xlsx = Roo::Excelx.new('./session.xlsx')
 
-    ws = session.spreadsheet_by_key("xxxxxxxxxxxxxxxxxxxxxxxxxxx").worksheets[0]
+    # headers = id:, name:
+    headers = xlsx.row(1)
+    xlsx.each_row_streaming(max_rows: 1) do |row|
+      # session = Session.create!()
+      # puts row.class
+      row.each_with_index do |cell, index|
+        # puts headers[index]
 
-    p ws[0, 0]
+        case headers[index]
+        when "時間" # 1.5|2.0h とか記法がバラバラなのでto_i
+          puts cell.cell_value.to_i
+        when cell.formula? # hyperlinkの式を取得するため
+          puts cell.formula
+        else
+          puts cell.cell_value
+        end
+      end
+    end
   end
 end
