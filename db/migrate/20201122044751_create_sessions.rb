@@ -6,8 +6,6 @@ class CreateSessions < ActiveRecord::Migration[6.0]
       t.datetime   :play_date # atteru?
       # GM
       t.references :gm, foreign_key: { to_table: :players }
-      # Player
-      t.references :player, foreign_key: true
       # archive_url_1.2.3..
       t.references :archive
       # プレイ時間
