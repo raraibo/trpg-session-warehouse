@@ -28,22 +28,24 @@ class ApplicationController < ActionController::Base
       column_name_headers["アーカイブ#{num}"] = "archive"
     end
 
-    xlsx.each_row_streaming(max_rows: 1) do |row|
+    # offset1でヘッダーを飛ばす
+    xlsx.each_row_streaming(offset: 1, max_rows: 1) do |row|
       # createはその場で保存される(create!なら失敗すると例外を投げてくる)
       session = Session.new
       row.each_with_index do |cell, index|
         case column_name_headers[headers[index]]
         when "gm"
-          gm = Player.where(name: cell.cell_value)
+          # whereで取得すると配列に格納されるのでfind_by
+          gm = Player.find_by(name: cell.cell_value)
           gm = Player.new if gm.blank?
           gm.name = cell.cell_value
           session.gm_id = gm # TODO : 入ってない、gm_id?
         when "play_date"
-          # puts cell
-          session.play_date = cell # TODO : 入ってない
+          # 数値で表される日付をTimeに変換
+          session.play_date = Time.parse("1899/12/30") + cell.cell_value.to_f * (60 * 60 * 24)
         when "player"
           cell.cell_value.split("、").each do |name|
-            player = Player.where(name: name)
+            player = Player.find_by(name: name)
             player = Player.new if player.blank?
             player.name = name
             session.players << player
@@ -55,6 +57,7 @@ class ApplicationController < ActionController::Base
           # session.
         when "platform" # TODO
         else
+          # 動的にセット
           session.write_attribute("#{column_name_headers[headers[index]]}", cell.cell_value)
         end
       end
