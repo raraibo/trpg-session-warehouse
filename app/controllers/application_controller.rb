@@ -35,19 +35,28 @@ class ApplicationController < ActionController::Base
       row.each_with_index do |cell, index|
         case column_name_headers[headers[index]]
         when "gm"
+          # 半角/全角スペースを除去
+          name = cell.cell_value.gsub(/(\s|　)+/, '')
           # whereで取得すると配列に格納されるのでfind_by
-          gm = Player.find_by(name: cell.cell_value)
-          gm = Player.new if gm.blank?
-          gm.name = cell.cell_value
-          session.gm_id = gm # TODO : 入ってない、gm_id?
+          gm = Player.find_by(name: name)
+          if gm.blank?
+            gm = Player.new
+            gm.name = name
+            # IDを発行
+            gm.save
+          end
+          session.gm_id = gm.id
         when "play_date"
           # 数値で表される日付をTimeに変換
           session.play_date = Time.parse("1899/12/30") + cell.cell_value.to_f * (60 * 60 * 24)
         when "player"
           cell.cell_value.split("、").each do |name|
+            name = name.gsub(/(\s|　)+/, '')
             player = Player.find_by(name: name)
-            player = Player.new if player.blank?
-            player.name = name
+            if player.blank?
+              player = Player.new
+              player.name = name
+            end
             session.players << player
           end
         when "play_time" # 1.5|2.0h とか記法がバラバラなのでto_i
